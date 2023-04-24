@@ -16,7 +16,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
 
     JButton CPM;
     JButton Posrednik;
-    public static int maxCost;
+    public static int maxTime;
 
     //Choosing method
     public void initUI(){
@@ -102,7 +102,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
                     czynnosc1.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            Task A = new Task(czynnosc1.getText(), Integer.parseInt(czas1.getText()), poprzednik1.getText());
+                            //Task A = new Task(czynnosc1.getText(), Integer.parseInt(czas1.getText()), poprzednik1.getText());
                             System.out.println(czynnosc1.getText());
                         }
                     });
@@ -132,9 +132,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
     }
 
     public static void main(String[] args) {
-
         //Main Frame
-
         WidloWicherekBoilApplication frame = new WidloWicherekBoilApplication();
         frame.initUI();
         frame.setSize(500,500);
@@ -142,9 +140,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
         frame.setVisible(true);
         frame.setLocationRelativeTo(null);
 
-
         SpringApplication.run(WidloWicherekBoilApplication.class, args);
-
         System.out.println();
 
         HashSet<Task> allTasks = new HashSet<Task>();
@@ -153,7 +149,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
         Task B = new Task("B", 3, A);
         Task C = new Task("C", 4);
         Task D = new Task("D", 6, A);
-        Task E = new Task("E", 4, D);
+        Task E = new Task("E", 4, C);
         Task F = new Task("F", 3, B, C, D);
         allTasks.add(A);
         allTasks.add(B);
@@ -168,8 +164,8 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
     // Logic behind
 
     public static class Task {
-        public int cost;
-        public int criticalCost;
+        public int time;
+        public int criticalTime;
         public String name;
         public int earlyStart;
         public int earlyFinish;
@@ -177,16 +173,16 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
         public int latestFinish;
         public HashSet<Task> dependencies = new HashSet<Task>();
 
-        public Task(String name, int cost, Task... dependencies) {
+        public Task(String name, int time, Task... dependencies) {
             this.name = name;
-            this.cost = cost;
+            this.time = time;
             this.dependencies.addAll(Arrays.asList(dependencies));
             this.earlyFinish = -1;
         }
 
         public void setLatest() {
-            latestStart = maxCost - criticalCost;
-            latestFinish = latestStart + cost;
+            latestStart = maxTime - criticalTime;
+            latestFinish = latestStart + time;
         }
     }
 
@@ -194,24 +190,19 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
         HashSet<Task> completed = new HashSet<Task>();
         HashSet<Task> remaining = new HashSet<Task>(tasks);
 
-        // while there are tasks whose critical cost isn't calculated.
         while (!remaining.isEmpty()) {
             boolean progress = false;
 
-            // find a new task to calculate
             for (Iterator<Task> it = remaining.iterator(); it.hasNext();) {
                 Task task = it.next();
                 if (completed.containsAll(task.dependencies)) {
-                    // all dependencies calculated, critical cost is max
-                    // dependency
-                    // critical cost, plus our cost
                     int critical = 0;
                     for (Task t : task.dependencies) {
-                        if (t.criticalCost > critical) {
-                            critical = t.criticalCost;
+                        if (t.criticalTime > critical) {
+                            critical = t.criticalTime;
                         }
                     }
-                    task.criticalCost = critical + task.cost;
+                    task.criticalTime = critical + task.time;
                     completed.add(task);
                     it.remove();
                     progress = true;
@@ -221,12 +212,10 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
                 throw new RuntimeException("Cyclic dependency, algorithm stopped!");
         }
 
-        // get the cost
-        maxCost(tasks);
+        maxTime(tasks);
         HashSet<Task> initialNodes = initials(tasks);
         calculateEarly(initialNodes);
 
-        // get the tasks
         Task[] ret = completed.toArray(new Task[0]);
         Arrays.sort(ret, new Comparator<Task>() {
             @Override
@@ -241,7 +230,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
     public static void calculateEarly(HashSet<Task> initials) {
         for (Task initial : initials) {
             initial.earlyStart = 0;
-            initial.earlyFinish = initial.cost;
+            initial.earlyFinish = initial.time;
             setEarly(initial);
         }
     }
@@ -251,7 +240,7 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
         for (Task t : initial.dependencies) {
             if (completionTime >= t.earlyStart) {
                 t.earlyStart = completionTime;
-                t.earlyFinish = completionTime + t.cost;
+                t.earlyFinish = completionTime + t.time;
             }
             setEarly(t);
         }
@@ -272,14 +261,14 @@ public class WidloWicherekBoilApplication extends JFrame implements ActionListen
         return remaining;
     }
 
-    public static void maxCost(Set<Task> tasks) {
+    public static void maxTime(Set<Task> tasks) {
         int max = -1;
         for (Task t : tasks) {
-            if (t.criticalCost > max)
-                max = t.criticalCost;
+            if (t.criticalTime > max)
+                max = t.criticalTime;
         }
-        maxCost = max;
-        System.out.println("Critical path length (cost): " + maxCost);
+        maxTime = max;
+        System.out.println("Critical path length (time): " + maxTime);
         for (Task t : tasks) {
             t.setLatest();
         }
